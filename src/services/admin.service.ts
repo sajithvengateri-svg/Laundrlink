@@ -69,7 +69,7 @@ export async function getAdminUsers(
   let query = supabase
     .from('profiles')
     .select('id, full_name, phone, role, is_active, created_at, stripe_customer_id')
-    .eq('role', role)
+    .eq('role', role as 'customer' | 'hub' | 'pro' | 'driver' | 'admin')
     .order('created_at', { ascending: false })
 
   if (search) {
@@ -108,7 +108,7 @@ export async function getAdminOrders(
     .limit(100)
 
   if (statusFilter) {
-    query = query.eq('status', statusFilter)
+    query = query.eq('status', statusFilter as 'pending' | 'pickup_scheduled' | 'picked_up_by_driver' | 'at_hub' | 'assigned_to_pro' | 'with_pro' | 'returned_to_hub' | 'out_for_delivery' | 'delivered' | 'cancelled')
   }
   if (search) {
     query = query.ilike('order_number', `%${search}%`)

@@ -1,5 +1,4 @@
 import { LoginForm } from '@/components/shared/Auth/LoginForm'
-import { APP_NAME } from '@/lib/constants'
 
 export function LoginPage() {
   return (

@@ -47,7 +47,7 @@ export function AdminSettingsPage() {
     if (!config) return
     const initial: Record<string, string> = {}
     PRICING_FIELDS.forEach(({ key, unit }) => {
-      const val = (config as Record<string, number | null>)[key]
+      const val = (config as unknown as Record<string, number | null>)[key]
       if (unit === 'cents') {
         initial[key] = centsToDisplay(val)
       } else {
@@ -103,7 +103,7 @@ export function AdminSettingsPage() {
                   {label}
                   {unit === 'cents' && config && (
                     <span className="ml-2 text-xs font-normal text-gray-400">
-                      (current: {formatCents((config as Record<string, number | null>)[key] ?? 0)})
+                      (current: {formatCents((config as unknown as Record<string, number | null>)[key] ?? 0)})
                     </span>
                   )}
                 </label>

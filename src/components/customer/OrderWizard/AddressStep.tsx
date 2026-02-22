@@ -1,11 +1,10 @@
 import { useFormContext } from 'react-hook-form'
 import { Autocomplete } from '@react-google-maps/api'
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { MapPin, Copy } from 'lucide-react'
-import { MAPS_CONFIG } from '@/lib/maps'
 import type { OrderWizardData } from '@/lib/validations'
 
 export function AddressStep() {
@@ -82,7 +81,6 @@ export function AddressStep() {
             componentRestrictions: { country: 'au' },
             fields: ['formatted_address', 'address_components', 'geometry'],
           }}
-          libraries={MAPS_CONFIG.libraries}
         >
           <Input
             placeholder="Start typing your pickup address…"
@@ -118,7 +116,6 @@ export function AddressStep() {
             componentRestrictions: { country: 'au' },
             fields: ['formatted_address', 'address_components', 'geometry'],
           }}
-          libraries={MAPS_CONFIG.libraries}
         >
           <Input
             placeholder="Start typing your delivery address…"

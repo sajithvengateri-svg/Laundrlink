@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback } from 'react'
-import { Camera, X, Check, RotateCcw } from 'lucide-react'
+import { Camera, X, Check } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'

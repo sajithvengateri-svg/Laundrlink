@@ -39,7 +39,8 @@ export function OrderWizard({ onComplete }: OrderWizardProps) {
   const [submitError, setSubmitError] = useState<string | null>(null)
 
   const methods = useForm<OrderWizardData>({
-    resolver: zodResolver(fullOrderSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(fullOrderSchema) as any,
     defaultValues: {
       same_as_pickup: true,
       is_ndis: false,

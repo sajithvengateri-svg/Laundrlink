@@ -67,11 +67,13 @@ export function WebScanPage() {
     setToken(decoded)
 
     // Fetch order number for display
-    supabase
-      .from('orders')
-      .select('order_number')
-      .eq('id', decoded.orderId)
-      .single()
+    Promise.resolve(
+      supabase
+        .from('orders')
+        .select('order_number')
+        .eq('id', decoded.orderId)
+        .single()
+    )
       .then(({ data }) => {
         if (data) setOrderNumber(data.order_number)
       })

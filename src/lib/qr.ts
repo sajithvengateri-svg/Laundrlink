@@ -33,7 +33,8 @@ export async function createQRScanner(elementId: string): Promise<QRScanner> {
 
   return {
     async start(cameraId, config, onSuccess, onError) {
-      await scanner.start(cameraId, { ...DEFAULT_CONFIG, ...config }, onSuccess, onError)
+      // DEFAULT_CONFIG always provides required fields like `fps`
+      await scanner.start(cameraId, { ...DEFAULT_CONFIG, ...config } as Required<Pick<QRConfig, 'fps'>> & QRConfig, onSuccess, onError)
     },
     async stop() {
       if (scanner.isScanning) {

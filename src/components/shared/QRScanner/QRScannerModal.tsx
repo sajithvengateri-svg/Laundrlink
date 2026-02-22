@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { X, FlashlightIcon as Flashlight, Keyboard } from 'lucide-react'
+import { X, Keyboard } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useQRScanner } from '@/hooks/useQRScanner'
 import { Button } from '@/components/ui/button'

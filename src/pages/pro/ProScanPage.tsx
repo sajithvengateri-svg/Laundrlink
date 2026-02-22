@@ -54,7 +54,8 @@ export function ProScanPage() {
         const url = await uploadHandoffPhoto(
           photos[i],
           activeJob.id,
-          `handoff-${handoffType}-${i}`
+          `handoff-${handoffType}`,
+          i
         )
         photoUrls.push(url)
       }

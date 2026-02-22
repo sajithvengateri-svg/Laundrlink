@@ -76,7 +76,7 @@ async function updateEntityRatingAvg(entityId: string, entityType: RatedEntityTy
     const { avg, count } = await getEntityRatingStats(entityId, entityType)
 
     if (entityType === 'hub') {
-      await supabase.from('hubs').update({ rating: avg }).eq('id', entityId)
+      await supabase.from('hubs').update({ rating_avg: avg, rating_count: count }).eq('id', entityId)
     } else if (entityType === 'pro') {
       await supabase
         .from('pros')

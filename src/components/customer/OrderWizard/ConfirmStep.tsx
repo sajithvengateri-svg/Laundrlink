@@ -7,10 +7,9 @@ import type { OrderWizardData } from '@/lib/validations'
 
 const SERVICE_LABELS: Record<string, string> = {
   wash_fold: 'Wash & Fold',
-  wash_iron: 'Wash & Iron',
   dry_clean: 'Dry Clean',
-  ironing: 'Ironing Only',
-  express: 'Express (24h)',
+  iron: 'Ironing',
+  specialist: 'Specialist',
 }
 
 export function ConfirmStep() {

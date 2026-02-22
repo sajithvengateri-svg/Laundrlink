@@ -22,8 +22,10 @@ export interface PayoutSummary {
 
 type PayoutProfileType = 'hub' | 'pro' | 'driver'
 
-function ledgerTypeForProfile(type: PayoutProfileType): string {
-  return `payout_${type}`
+type LedgerPayoutType = 'payout_hub' | 'payout_pro' | 'payout_driver'
+
+function ledgerTypeForProfile(type: PayoutProfileType): LedgerPayoutType {
+  return `payout_${type}` as LedgerPayoutType
 }
 
 export async function getPayoutHistory(

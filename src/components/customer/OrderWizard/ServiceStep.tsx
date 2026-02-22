@@ -6,10 +6,9 @@ import type { OrderWizardData } from '@/lib/validations'
 
 const SERVICES = [
   { value: 'wash_fold', label: 'Wash & Fold', description: 'Washed, dried, and folded', icon: '🧺', price: 'from $15' },
-  { value: 'wash_iron', label: 'Wash & Iron', description: 'Washed, dried, and pressed', icon: '👔', price: 'from $25' },
   { value: 'dry_clean', label: 'Dry Clean', description: 'Professional dry cleaning', icon: '✨', price: 'from $12/item' },
-  { value: 'ironing', label: 'Ironing Only', description: 'Drop off already-washed items', icon: '🪄', price: 'from $8' },
-  { value: 'express', label: 'Express (24h)', description: 'Same-day or next-day turnaround', icon: '⚡', price: '+$15' },
+  { value: 'iron', label: 'Ironing', description: 'Drop off already-washed items for pressing', icon: '🪄', price: 'from $8' },
+  { value: 'specialist', label: 'Specialist', description: 'Specialist cleaning & care', icon: '⚡', price: 'from $20' },
 ]
 
 export function ServiceStep() {

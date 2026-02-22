@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Loader2, Mail, Lock, User, Phone } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
-import { ROLES, type Role } from '@/lib/constants'
+import { ROLES } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 
 const schema = z.object({
@@ -19,7 +19,7 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
-const ROLE_OPTIONS: Array<{ value: Role; label: string; description: string }> = [
+const ROLE_OPTIONS: Array<{ value: FormData['role']; label: string; description: string }> = [
   { value: ROLES.CUSTOMER, label: 'Customer', description: 'I want to order laundry services' },
   { value: ROLES.HUB, label: 'Hub / Business', description: 'I run a laundromat or laundry business' },
   { value: ROLES.PRO, label: 'Laundry Pro', description: 'I want to wash from home and earn' },

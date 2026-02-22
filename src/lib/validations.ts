@@ -28,7 +28,7 @@ export const addressSchema = z.object({
   suburb: z.string().min(2, 'Enter a suburb'),
   state: z.string().min(2, 'Enter a state'),
   postcode: z.string().regex(/^\d{4}$/, 'Enter a 4-digit postcode'),
-  country: z.string().default('Australia'),
+  country: z.string().optional().default('Australia'),
   lat: z.number().optional(),
   lng: z.number().optional(),
   formatted: z.string().optional(),
@@ -55,7 +55,7 @@ export const orderStep2Schema = z.object({
 })
 
 export const orderStep3Schema = z.object({
-  service_type: z.enum(['wash_fold', 'dry_clean', 'ironing', 'wash_iron', 'express']),
+  service_type: z.enum(['wash_fold', 'dry_clean', 'iron', 'specialist']),
   special_instructions: z.string().max(500).optional(),
   is_ndis: z.boolean().default(false),
   ndis_number: z.string().optional(),
