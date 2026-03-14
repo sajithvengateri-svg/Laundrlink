@@ -8,10 +8,12 @@ import { Skeleton } from '@/components/ui/skeleton'
 import type { HandoffStep } from '@/types/hub.types'
 
 const SCAN_STEPS: { step: HandoffStep; label: string; description: string }[] = [
-  { step: 'driver_to_hub', label: 'Receive from Driver', description: 'Bag arriving from pickup' },
-  { step: 'hub_to_pro', label: 'Send to Laundry Pro', description: 'Dispatching for washing' },
-  { step: 'pro_to_hub', label: 'Receive from Pro', description: 'Clean bag returned' },
-  { step: 'hub_to_driver', label: 'Send for Delivery', description: 'Dispatching to customer' },
+  { step: 'customer_to_driver', label: 'Customer to Driver', description: 'Pickup from customer' },
+  { step: 'driver_to_hub', label: 'Driver to Hub', description: 'Bag arriving at hub' },
+  { step: 'hub_to_pro', label: 'Hub to Pro', description: 'Send for washing' },
+  { step: 'pro_to_hub', label: 'Pro to Hub', description: 'Clean bag returned' },
+  { step: 'hub_to_driver', label: 'Hub to Driver', description: 'Send for delivery' },
+  { step: 'driver_to_customer', label: 'Driver to Customer', description: 'Deliver to customer' },
 ]
 
 export default function HubScanPage() {
@@ -60,6 +62,7 @@ export default function HubScanPage() {
               onComplete={() => {
                 setTimeout(() => setSelectedStep(null), 1500)
               }}
+              onNextStep={(nextStep) => setSelectedStep(nextStep)}
             />
           </CardContent>
         </Card>

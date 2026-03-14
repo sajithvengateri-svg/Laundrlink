@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Home, ShoppingBag, Clock, User, LayoutDashboard, ScanLine, DollarSign, Truck } from 'lucide-react'
+import { Home, ShoppingBag, Clock, User, LayoutDashboard, ScanLine, DollarSign } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { cn } from '@/lib/utils'
 
@@ -25,9 +25,9 @@ const PRO_NAV = [
 ]
 
 const DRIVER_NAV = [
-  { to: '/driver', icon: LayoutDashboard, label: 'Runs' },
-  { to: '/driver/active', icon: Truck, label: 'Active' },
-  { to: '/driver/scan', icon: ScanLine, label: 'Scanner' },
+  { to: '/driver', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/driver/scan', icon: ScanLine, label: 'Scan' },
+  { to: '/driver/earnings', icon: DollarSign, label: 'Earnings' },
   { to: '/profile', icon: User, label: 'Profile' },
 ]
 

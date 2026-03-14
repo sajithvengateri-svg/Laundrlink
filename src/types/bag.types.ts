@@ -10,7 +10,7 @@ export interface BagWithOrder extends Bag {
   order?: {
     id: string
     order_number: string
-    status: string
+    status: string | null
     customer?: {
       full_name: string
       phone: string

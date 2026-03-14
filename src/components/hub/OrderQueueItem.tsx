@@ -58,7 +58,7 @@ export function OrderQueueItem({ order, onClick }: OrderQueueItemProps) {
             <>
               <span>·</span>
               <Package className="h-3 w-3" />
-              <span>{order.bags.length} bag{order.bags.length !== 1 ? 's' : ''}</span>
+              <span className="font-mono">{order.bags[0].qr_code}</span>
             </>
           )}
           {timeAgo && (

@@ -67,6 +67,9 @@ const DriverEarningsPage  = lazy(() => import('@/pages/driver/DriverEarningsPage
 // Public scan
 const WebScanPage = lazy(() => import('@/pages/scan/WebScanPage').then((m) => ({ default: m.WebScanPage })))
 
+// Help
+const HelpPage = lazy(() => import('@/pages/shared/HelpPage'))
+
 // Admin
 const AdminDashboardPage     = lazy(() => import('@/pages/admin/AdminDashboardPage').then((m) => ({ default: m.AdminDashboardPage })))
 const AdminUsersPage         = lazy(() => import('@/pages/admin/AdminUsersPage').then((m) => ({ default: m.AdminUsersPage })))
@@ -75,6 +78,7 @@ const AdminNotificationsPage = lazy(() => import('@/pages/admin/AdminNotificatio
 const AdminVerificationPage  = lazy(() => import('@/pages/admin/AdminVerificationPage').then((m) => ({ default: m.AdminVerificationPage })))
 const AdminSettingsPage      = lazy(() => import('@/pages/admin/AdminSettingsPage').then((m) => ({ default: m.AdminSettingsPage })))
 const AdminAnalyticsPage     = lazy(() => import('@/pages/admin/AdminAnalyticsPage').then((m) => ({ default: m.AdminAnalyticsPage })))
+const QRCodesPage            = lazy(() => import('@/pages/admin/QRCodesPage'))
 
 // ── Router ────────────────────────────────────────────────────────────────────
 
@@ -159,6 +163,7 @@ export const router = createBrowserRouter([
               { path: '/admin/notifications',    element: <Lazy component={AdminNotificationsPage} /> },
               { path: '/admin/analytics',        element: <Lazy component={AdminAnalyticsPage} /> },
               { path: '/admin/settings',         element: <Lazy component={AdminSettingsPage} /> },
+              { path: '/admin/qr-codes',        element: <Lazy component={QRCodesPage} /> },
             ],
           },
         ],
@@ -166,7 +171,8 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // ─── Public scan page (no auth — for third-party drivers) ───────────────────
+  // ─── Public pages ──────────────────────────────────────────────────────────
+  { path: '/help', element: <Lazy component={HelpPage} /> },
   { path: '/scan', element: <Lazy component={WebScanPage} /> },
 
   // 404

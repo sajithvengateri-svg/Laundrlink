@@ -77,24 +77,14 @@ export function QRScannerModal({
           </button>
         </div>
 
-        {/* Scanner / Manual Entry */}
+        {/* Scanner area */}
         <div className="flex-1 relative overflow-hidden">
           {manualEntry ? (
-            <div className="flex flex-col items-center justify-center h-full px-6 gap-4">
-              <p className="text-white/70 text-sm text-center">
-                Enter the QR code printed on the bag tag manually
+            <div className="flex flex-col items-center justify-center h-full px-6">
+              <Keyboard className="h-12 w-12 text-white/30 mb-3" />
+              <p className="text-white/50 text-sm text-center">
+                Type the bag code below and tap Submit
               </p>
-              <Input
-                className="bg-white/10 border-white/30 text-white placeholder:text-white/40"
-                placeholder="e.g. LL-BAG-00001"
-                value={manualCode}
-                onChange={(e) => setManualCode(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleManualSubmit()}
-                autoFocus
-              />
-              <Button onClick={handleManualSubmit} disabled={!manualCode.trim()} className="w-full">
-                Confirm Code
-              </Button>
             </div>
           ) : (
             <>
@@ -140,28 +130,50 @@ export function QRScannerModal({
                   <p className="text-red-400 text-sm text-center">
                     {error ?? 'Camera access denied. Please allow camera permissions and try again.'}
                   </p>
-                  <Button variant="outline" size="sm" onClick={() => setManualEntry(true)}>
-                    Enter code manually
-                  </Button>
                 </div>
               )}
             </>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-center gap-4 px-4 py-4 pb-safe-bottom bg-black/80">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-white/70"
-            onClick={() => {
-              setManualEntry((v) => !v)
-            }}
-          >
-            <Keyboard className="h-4 w-4 mr-1.5" />
-            {manualEntry ? 'Use Camera' : 'Enter Manually'}
-          </Button>
+        {/* Fixed bottom manual-entry area — always visible */}
+        <div className="px-4 pt-3 pb-4 pb-safe-bottom bg-black/90 border-t border-white/10">
+          {manualEntry ? (
+            <div className="space-y-3">
+              <Input
+                className="h-12 bg-white text-black text-lg font-mono placeholder:text-gray-400 border-0"
+                placeholder="e.g. LL-BAG-001"
+                value={manualCode}
+                onChange={(e) => setManualCode(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleManualSubmit()}
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleManualSubmit}
+                  disabled={!manualCode.trim()}
+                  className="flex-1 h-12 bg-white text-black font-semibold text-base hover:bg-gray-100"
+                >
+                  Submit
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => setManualEntry(false)}
+                  className="h-12 text-white/70 hover:text-white px-4"
+                >
+                  Camera
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button
+              onClick={() => setManualEntry(true)}
+              className="w-full h-14 bg-white text-black font-semibold text-base hover:bg-gray-100 rounded-xl"
+            >
+              <Keyboard className="h-5 w-5 mr-2" />
+              Type Code Manually
+            </Button>
+          )}
         </div>
       </motion.div>
     </AnimatePresence>

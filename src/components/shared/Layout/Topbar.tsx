@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { LogOut } from 'lucide-react'
+import { LogOut, HelpCircle } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useAuth } from '@/hooks/useAuth'
 import { APP_NAME } from '@/lib/constants'
@@ -36,6 +36,13 @@ export function Topbar() {
 
         {/* Actions */}
         <div className="flex items-center gap-1">
+          <Link
+            to="/help"
+            className="flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            aria-label="Help"
+          >
+            <HelpCircle className="h-5 w-5" />
+          </Link>
           <NotificationBell />
           <button
             onClick={() => void signOut()}

@@ -24,31 +24,51 @@ export async function getHubById(hubId: string): Promise<Hub | null> {
 }
 
 export async function getHubQueue(hubId: string): Promise<OrderWithDetails[]> {
-  const { data, error } = await supabase
+  // Query 1: orders for this hub (excluding completed/cancelled)
+  const { data: orders, error } = await supabase
     .from('orders')
-    .select(
-      `
-      *,
-      customer:profiles!orders_customer_id_fkey (
-        id,
-        full_name,
-        phone,
-        avatar_url
-      ),
-      bags (
-        id,
-        qr_code,
-        current_status
-      ),
-      handoffs (*)
-    `
-    )
+    .select('*')
     .eq('hub_id', hubId)
     .not('status', 'in', '("delivered","cancelled")')
     .order('created_at', { ascending: false })
 
-  if (error) throw error
-  return (data as OrderWithDetails[]) ?? []
+  if (error) throw new Error(`Hub queue lookup failed: ${error.message}`)
+  if (!orders || orders.length === 0) return []
+
+  // Query 2: customer profiles for all unique customer_ids
+  const customerIds = [...new Set(orders.map((o) => o.customer_id).filter(Boolean))] as string[]
+  let customerMap: Record<string, { id: string; full_name: string; phone: string; avatar_url: string | null }> = {}
+  if (customerIds.length > 0) {
+    const { data: profiles } = await supabase.from('profiles').select('id, full_name, phone, avatar_url').in('id', customerIds)
+    if (profiles) {
+      customerMap = Object.fromEntries(profiles.map((p) => [p.id, { id: p.id, full_name: p.full_name ?? '', phone: p.phone ?? '', avatar_url: p.avatar_url }]))
+    }
+  }
+
+  // Query 3: bags for all orders
+  const orderIds = orders.map((o) => o.id)
+  const bagMap: Record<string, Array<{ id: string; qr_code: string; current_status: string }>> = {}
+  if (orderIds.length > 0) {
+    const { data: bags } = await supabase
+      .from('bags')
+      .select('id, qr_code, current_status, current_order_id')
+      .in('current_order_id', orderIds)
+    if (bags) {
+      for (const bag of bags) {
+        const oid = bag.current_order_id as string
+        if (!bagMap[oid]) bagMap[oid] = []
+        bagMap[oid].push({ id: bag.id, qr_code: bag.qr_code, current_status: bag.current_status ?? '' })
+      }
+    }
+  }
+
+  return orders.map((order) => ({
+    ...order,
+    customer: order.customer_id && customerMap[order.customer_id]
+      ? customerMap[order.customer_id]
+      : null,
+    bags: bagMap[order.id] ?? [],
+  })) as OrderWithDetails[]
 }
 
 export async function getHubMetrics(hubId: string): Promise<HubMetrics> {

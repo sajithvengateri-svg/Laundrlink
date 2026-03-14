@@ -69,47 +69,81 @@ export async function createOrder(params: CreateOrderParams): Promise<Order> {
 }
 
 export async function getOrderById(orderId: string): Promise<OrderWithDetails | null> {
-  const { data, error } = await supabase
+  // Query 1: order row
+  const { data: order, error: orderError } = await supabase
     .from('orders')
-    .select(
-      `
-      *,
-      customer:profiles!orders_customer_id_fkey (
-        id, full_name, phone, avatar_url
-      ),
-      hub:hubs!orders_hub_id_fkey (
-        id, business_name, address
-      ),
-      items:order_items (*),
-      handoffs (
-        id, step, photo_urls, created_at, scanned_by
-      )
-    `
-    )
+    .select('*')
     .eq('id', orderId)
     .maybeSingle()
 
-  if (error) throw error
-  return data as OrderWithDetails | null
+  if (orderError) throw new Error(`Order lookup failed: ${orderError.message}`)
+  if (!order) return null
+
+  // Query 2-4 in parallel: customer, hub, items, handoffs
+  const [customerRes, hubRes, itemsRes, handoffsRes] = await Promise.all([
+    order.customer_id
+      ? supabase.from('profiles').select('id, full_name, phone, avatar_url').eq('id', order.customer_id).maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    order.hub_id
+      ? supabase.from('hubs').select('id, business_name, address').eq('id', order.hub_id).maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    supabase.from('order_items').select('*').eq('order_id', orderId),
+    supabase.from('handoffs').select('id, step, photo_urls, created_at, scanned_by').eq('order_id', orderId).order('created_at', { ascending: true }),
+  ])
+
+  if (customerRes.error) console.warn('[getOrderById] customer lookup failed:', customerRes.error.message)
+  if (hubRes.error) console.warn('[getOrderById] hub lookup failed:', hubRes.error.message)
+  if (itemsRes.error) console.warn('[getOrderById] items lookup failed:', itemsRes.error.message)
+  if (handoffsRes.error) console.warn('[getOrderById] handoffs lookup failed:', handoffsRes.error.message)
+
+  const result: OrderWithDetails = {
+    ...order,
+    customer: customerRes.data
+      ? { id: customerRes.data.id, full_name: customerRes.data.full_name ?? '', phone: customerRes.data.phone ?? '', avatar_url: customerRes.data.avatar_url }
+      : null,
+    hub: hubRes.data
+      ? { id: hubRes.data.id, business_name: hubRes.data.business_name, address: hubRes.data.address as Record<string, unknown> }
+      : null,
+    items: (itemsRes.data ?? []) as OrderWithDetails['items'],
+    handoffs: (handoffsRes.data ?? []) as OrderWithDetails['handoffs'],
+  }
+
+  console.log('[getOrderById] result:', { orderId, status: result.status, handoffCount: result.handoffs?.length })
+  return result
 }
 
 export async function getCustomerOrders(customerId: string): Promise<OrderWithDetails[]> {
-  const { data, error } = await supabase
+  // Query 1: orders
+  const { data: orders, error } = await supabase
     .from('orders')
-    .select(
-      `
-      *,
-      hub:hubs!orders_hub_id_fkey (
-        id, business_name
-      ),
-      items:order_items (*)
-    `
-    )
+    .select('*')
     .eq('customer_id', customerId)
     .order('created_at', { ascending: false })
 
-  if (error) throw error
-  return (data as OrderWithDetails[]) ?? []
+  if (error) throw new Error(`Customer orders lookup failed: ${error.message}`)
+  if (!orders || orders.length === 0) return []
+
+  // Query 2: hub details for all unique hub_ids
+  const hubIds = [...new Set(orders.map((o) => o.hub_id).filter(Boolean))] as string[]
+  let hubMap: Record<string, { id: string; business_name: string }> = {}
+  if (hubIds.length > 0) {
+    const { data: hubs } = await supabase.from('hubs').select('id, business_name').in('id', hubIds)
+    if (hubs) {
+      hubMap = Object.fromEntries(hubs.map((h) => [h.id, h]))
+    }
+  }
+
+  // Query 3: items for all orders
+  const orderIds = orders.map((o) => o.id)
+  const { data: allItems } = await supabase.from('order_items').select('*').in('order_id', orderIds)
+
+  return orders.map((order) => ({
+    ...order,
+    hub: order.hub_id && hubMap[order.hub_id]
+      ? { id: hubMap[order.hub_id].id, business_name: hubMap[order.hub_id].business_name, address: {} }
+      : null,
+    items: (allItems ?? []).filter((item) => item.order_id === order.id),
+  })) as OrderWithDetails[]
 }
 
 export async function cancelOrder(orderId: string): Promise<void> {

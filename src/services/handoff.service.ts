@@ -48,8 +48,14 @@ const STEP_STATUS_TRANSITIONS: Record<HandoffStep, { bagStatus: BagStatus; order
 }
 
 export async function createHandoff(params: CreateHandoffParams): Promise<Handoff> {
+  // In dev mode, photos are optional — use a placeholder if none provided
+  const IS_DEV_MODE = import.meta.env.VITE_DEV_MODE === 'true'
   if (!params.photoUrls || params.photoUrls.length === 0) {
-    throw new Error('At least one photo is required for handoff verification')
+    if (IS_DEV_MODE) {
+      params = { ...params, photoUrls: ['test-handoff-no-photo'] }
+    } else {
+      throw new Error('At least one photo is required for handoff verification')
+    }
   }
 
   const transition = STEP_STATUS_TRANSITIONS[params.step]

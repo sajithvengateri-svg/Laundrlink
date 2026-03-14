@@ -30,6 +30,10 @@ export function formatRelative(date: string | Date): string {
   return formatDistanceToNow(new Date(date), { addSuffix: true })
 }
 
+export function formatTime(date: string | Date): string {
+  return format(new Date(date), 'h:mm a')
+}
+
 // ─── Address formatting ────────────────────────────────────────────────────────
 export function formatAddress(address: {
   street?: string

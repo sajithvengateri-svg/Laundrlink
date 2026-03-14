@@ -2,27 +2,49 @@ import { supabase } from '@/lib/supabase'
 import type { Bag, BagWithOrder, AssignBagParams } from '@/types/bag.types'
 
 export async function getBagByQR(qrCode: string): Promise<BagWithOrder | null> {
-  const { data, error } = await supabase
+  // Query 1: bag only — no joins
+  const { data: bag, error: bagError } = await supabase
     .from('bags')
-    .select(
-      `
-      *,
-      order:orders!bags_current_order_id_fkey (
-        id,
-        order_number,
-        status,
-        customer:profiles!orders_customer_id_fkey (
-          full_name,
-          phone
-        )
-      )
-    `
-    )
+    .select('*')
     .eq('qr_code', qrCode)
     .maybeSingle()
 
-  if (error) throw error
-  return data as BagWithOrder | null
+  if (bagError) throw new Error(`Bag lookup failed: ${bagError.message}`)
+  if (!bag) return null
+
+  // Query 2: order (if bag is assigned)
+  let order: { id: string; order_number: string; status: string | null; customer_id: string | null } | null = null
+  if (bag.current_order_id) {
+    const { data, error } = await supabase
+      .from('orders')
+      .select('id, order_number, status, customer_id')
+      .eq('id', bag.current_order_id)
+      .maybeSingle()
+    if (error) console.warn('[getBagByQR] order lookup failed:', error.message)
+    if (data) order = data
+  }
+
+  // Query 3: customer profile (if order has customer_id)
+  let customer: { full_name: string; phone: string } | undefined
+  if (order?.customer_id) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('full_name, phone')
+      .eq('id', order.customer_id)
+      .maybeSingle()
+    if (error) console.warn('[getBagByQR] profile lookup failed:', error.message)
+    if (data) customer = { full_name: data.full_name ?? '', phone: data.phone ?? '' }
+  }
+
+  const result: BagWithOrder = {
+    ...bag,
+    order: order
+      ? { id: order.id, order_number: order.order_number, status: order.status, customer }
+      : null,
+  }
+
+  console.log('[getBagByQR] result:', { qrCode, bagId: result.id, orderId: result.current_order_id, order: result.order })
+  return result
 }
 
 export async function assignBagToOrder(params: AssignBagParams): Promise<Bag> {

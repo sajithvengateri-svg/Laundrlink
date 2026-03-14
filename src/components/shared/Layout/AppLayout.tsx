@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { MobileNav } from './MobileNav'
 import { Topbar } from './Topbar'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
+import { DevRoleSwitcher } from '@/components/shared/DevRoleSwitcher'
 
 // Admin uses full desktop layout — no mobile nav
 const ADMIN_PATH_PREFIX = '/admin'
@@ -21,6 +22,7 @@ export function AppLayout() {
         <main className="flex-1 overflow-auto bg-gray-50">
           <Outlet />
         </main>
+        <DevRoleSwitcher />
       </div>
     )
   }
@@ -45,6 +47,7 @@ export function AppLayout() {
       </main>
 
       <MobileNav />
+      <DevRoleSwitcher />
     </div>
   )
 }

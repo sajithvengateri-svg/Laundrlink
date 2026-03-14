@@ -440,6 +440,7 @@ export type Database = {
           stripe_connect_id: string | null
           stripe_onboarding_complete: boolean | null
           updated_at: string | null
+          verification_methods: string[] | null
         }
         Insert: {
           abn?: string | null
@@ -471,6 +472,7 @@ export type Database = {
           stripe_connect_id?: string | null
           stripe_onboarding_complete?: boolean | null
           updated_at?: string | null
+          verification_methods?: string[] | null
         }
         Update: {
           abn?: string | null
@@ -502,6 +504,7 @@ export type Database = {
           stripe_connect_id?: string | null
           stripe_onboarding_complete?: boolean | null
           updated_at?: string | null
+          verification_methods?: string[] | null
         }
         Relationships: [
           {
@@ -804,6 +807,8 @@ export type Database = {
           order_number: string
           payment_status: string | null
           pickup_address: Json
+          pickup_otp: string | null
+          delivery_otp: string | null
           pickup_fee_cents: number | null
           pickup_scheduled_at: string | null
           platform_fee_cents: number | null
@@ -844,6 +849,8 @@ export type Database = {
           order_number?: string
           payment_status?: string | null
           pickup_address: Json
+          pickup_otp?: string | null
+          delivery_otp?: string | null
           pickup_fee_cents?: number | null
           pickup_scheduled_at?: string | null
           platform_fee_cents?: number | null
@@ -884,6 +891,8 @@ export type Database = {
           order_number?: string
           payment_status?: string | null
           pickup_address?: Json
+          pickup_otp?: string | null
+          delivery_otp?: string | null
           pickup_fee_cents?: number | null
           pickup_scheduled_at?: string | null
           platform_fee_cents?: number | null
@@ -1012,9 +1021,11 @@ export type Database = {
           points_redeem_rate: number | null
           referee_reward_points: number | null
           referrer_reward_points: number | null
+          default_verification_methods: string[] | null
           updated_at: string | null
         }
         Insert: {
+          default_verification_methods?: string[] | null
           delivery_fee_cents?: number | null
           driver_fee_base_cents?: number | null
           driver_fee_per_km_cents?: number | null
@@ -1034,6 +1045,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          default_verification_methods?: string[] | null
           delivery_fee_cents?: number | null
           driver_fee_base_cents?: number | null
           driver_fee_per_km_cents?: number | null

@@ -20,7 +20,7 @@ export function useDriverProfile() {
   return useQuery({
     queryKey: ['driverProfile', driverId],
     queryFn: () => getDriverProfile(driverId),
-    enabled: !!driverId,
+    enabled: !!driverId && profile?.role === 'driver',
     staleTime: 2 * 60 * 1000,
   })
 }
@@ -32,7 +32,7 @@ export function useDriverMetrics() {
   return useQuery({
     queryKey: ['driverMetrics', driverId],
     queryFn: () => getDriverMetrics(driverId),
-    enabled: !!driverId,
+    enabled: !!driverId && profile?.role === 'driver',
     refetchInterval: 60_000,
   })
 }
@@ -44,7 +44,7 @@ export function useDriverRuns(since?: string) {
   return useQuery({
     queryKey: ['driverRuns', driverId, since],
     queryFn: () => getDriverRuns(driverId, since),
-    enabled: !!driverId,
+    enabled: !!driverId && profile?.role === 'driver',
     staleTime: 30_000,
   })
 }
@@ -58,7 +58,7 @@ export function useActiveJob() {
   const query = useQuery({
     queryKey: ['activeJob', driverId],
     queryFn: () => getActiveDispatchJob(driverId),
-    enabled: !!driverId,
+    enabled: !!driverId && profile?.role === 'driver',
     staleTime: 15_000,
   })
 

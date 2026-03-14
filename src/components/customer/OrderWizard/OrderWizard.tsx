@@ -1,8 +1,6 @@
 import { useState } from 'react'
 import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Elements } from '@stripe/react-stripe-js'
-import { loadStripe } from '@stripe/stripe-js'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -12,12 +10,17 @@ import { ItemsStep } from './ItemsStep'
 import { ServiceStep } from './ServiceStep'
 import { ScheduleStep } from './ScheduleStep'
 import { ConfirmStep } from './ConfirmStep'
-import { PaymentForm } from '@/components/customer/PaymentForm'
 import { useCreateOrder } from '@/hooks/useOrder'
-import { createPaymentIntent, assignHubToOrder } from '@/services/payment.service'
 import { fullOrderSchema, type OrderWizardData } from '@/lib/validations'
+import { supabase } from '@/lib/supabase'
+import { setOrderOTP } from '@/services/otp.service'
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string)
+const IS_DEV_MODE = import.meta.env.VITE_DEV_MODE === 'true'
+
+// Only load Stripe in production mode
+const stripePromise = IS_DEV_MODE
+  ? null
+  : import('@stripe/stripe-js').then((m) => m.loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string))
 
 interface OrderWizardProps {
   onComplete: (orderId: string) => void
@@ -28,7 +31,7 @@ const STEPS = [
   { label: 'Items', component: ItemsStep },
   { label: 'Service', component: ServiceStep },
   { label: 'Schedule', component: ScheduleStep },
-  { label: 'Confirm & Pay', component: ConfirmStep },
+  { label: IS_DEV_MODE ? 'Confirm' : 'Confirm & Pay', component: ConfirmStep },
 ]
 
 export function OrderWizard({ onComplete }: OrderWizardProps) {
@@ -37,6 +40,7 @@ export function OrderWizard({ onComplete }: OrderWizardProps) {
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [, setPickupOtp] = useState<string | null>(null)
 
   const methods = useForm<OrderWizardData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -63,13 +67,64 @@ export function OrderWizard({ onComplete }: OrderWizardProps) {
     return true
   }
 
+  const handleDevModeComplete = async (orderId: string) => {
+    // In dev mode: bypass Stripe, auto-set payment, auto-assign hub + bag
+    try {
+      // 1. Find first active hub
+      const { data: hub } = await supabase
+        .from('hubs')
+        .select('id')
+        .eq('is_active', true)
+        .limit(1)
+        .single()
+
+      // 2. Update order: mark as paid, assign hub, set status
+      await supabase
+        .from('orders')
+        .update({
+          payment_status: 'paid',
+          status: 'pickup_scheduled',
+          hub_id: hub?.id ?? null,
+        })
+        .eq('id', orderId)
+
+      // 3. Find first unassigned bag and assign it
+      const { data: bag } = await supabase
+        .from('bags')
+        .select('id')
+        .is('current_order_id', null)
+        .limit(1)
+        .single()
+
+      if (bag) {
+        await supabase
+          .from('bags')
+          .update({
+            current_order_id: orderId,
+            current_status: 'in_transit_to_hub',
+          })
+          .eq('id', bag.id)
+      }
+
+      // Generate OTP codes for pickup and delivery
+      const pOtp = await setOrderOTP(orderId, 'pickup')
+      await setOrderOTP(orderId, 'delivery')
+      setPickupOtp(pOtp)
+
+      onComplete(orderId)
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Failed to finalize order')
+      setIsSubmitting(false)
+    }
+  }
+
   const handleNext = async () => {
     if (step < STEPS.length - 1) {
       setStep((s) => s + 1)
       return
     }
 
-    // Final step: create order + payment intent
+    // Final step: create order
     setIsSubmitting(true)
     setSubmitError(null)
 
@@ -92,8 +147,16 @@ export function OrderWizard({ onComplete }: OrderWizardProps) {
 
       setCreatedOrderId(order.id)
 
+      if (IS_DEV_MODE) {
+        // Dev mode: bypass payment, auto-assign hub + bag
+        await handleDevModeComplete(order.id)
+        return
+      }
+
+      // Production mode: proceed with Stripe payment
       // 2. Auto-assign hub if user didn't pick one
       if (!values.hub_id && values.pickup_address.lat && values.pickup_address.lng) {
+        const { assignHubToOrder } = await import('@/services/payment.service')
         await assignHubToOrder(order.id, values.pickup_address.lat, values.pickup_address.lng)
       }
 
@@ -103,6 +166,7 @@ export function OrderWizard({ onComplete }: OrderWizardProps) {
         0
       )
 
+      const { createPaymentIntent } = await import('@/services/payment.service')
       const piResult = await createPaymentIntent(order.id, total, '')
       setClientSecret(piResult.client_secret)
     } catch (err) {
@@ -119,27 +183,24 @@ export function OrderWizard({ onComplete }: OrderWizardProps) {
     void paymentIntentId
   }
 
-  // Show payment UI after order is created
-  if (clientSecret && createdOrderId) {
+  // Show payment UI after order is created (production mode only)
+  if (!IS_DEV_MODE && clientSecret && createdOrderId) {
+    // Dynamically render Stripe Elements only in production
     return (
       <div className="space-y-4">
         <div>
           <h2 className="text-lg font-semibold">Payment</h2>
           <p className="text-sm text-muted-foreground">Secure payment via Stripe</p>
         </div>
-        <Elements stripe={stripePromise} options={{ clientSecret }}>
-          <PaymentForm
-            clientSecret={clientSecret}
-            amountCents={
-              methods.getValues().items.reduce(
-                (sum, i) => sum + (i.price_cents ?? 0) * (i.quantity ?? 0),
-                0
-              )
-            }
-            onSuccess={handlePaymentSuccess}
-            onError={setSubmitError}
-          />
-        </Elements>
+        <StripePaymentWrapper
+          clientSecret={clientSecret}
+          amountCents={methods.getValues().items.reduce(
+            (sum, i) => sum + (i.price_cents ?? 0) * (i.quantity ?? 0),
+            0
+          )}
+          onSuccess={handlePaymentSuccess}
+          onError={setSubmitError}
+        />
         {submitError && (
           <p className="text-sm text-brand-danger text-center">{submitError}</p>
         )}
@@ -206,7 +267,7 @@ export function OrderWizard({ onComplete }: OrderWizardProps) {
             {isSubmitting ? (
               'Creating Order…'
             ) : step === STEPS.length - 1 ? (
-              'Place Order'
+              IS_DEV_MODE ? 'Place Order (Dev)' : 'Place Order'
             ) : (
               <>
                 Next
@@ -217,5 +278,55 @@ export function OrderWizard({ onComplete }: OrderWizardProps) {
         </div>
       </div>
     </FormProvider>
+  )
+}
+
+// Lazy-loaded Stripe wrapper — only used in production mode
+function StripePaymentWrapper({
+  clientSecret,
+  amountCents,
+  onSuccess,
+  onError,
+}: {
+  clientSecret: string
+  amountCents: number
+  onSuccess: (paymentIntentId: string) => void
+  onError: (error: string) => void
+}) {
+  const [StripeComponents, setStripeComponents] = useState<{
+    Elements: React.ComponentType<{ stripe: unknown; options: { clientSecret: string }; children: React.ReactNode }>
+    PaymentForm: React.ComponentType<{ clientSecret: string; amountCents: number; onSuccess: (id: string) => void; onError: (err: string) => void }>
+    stripe: unknown
+  } | null>(null)
+
+  // Load Stripe components dynamically
+  useState(() => {
+    void (async () => {
+      const [{ Elements }, { PaymentForm }, stripe] = await Promise.all([
+        import('@stripe/react-stripe-js'),
+        import('@/components/customer/PaymentForm'),
+        stripePromise!,
+      ])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setStripeComponents({ Elements: Elements as any, PaymentForm, stripe })
+    })()
+  })
+
+  if (!StripeComponents) {
+    return <div className="text-center text-sm text-muted-foreground py-8">Loading payment…</div>
+  }
+
+  const { Elements, PaymentForm, stripe } = StripeComponents
+
+  return (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    <Elements stripe={stripe as any} options={{ clientSecret }}>
+      <PaymentForm
+        clientSecret={clientSecret}
+        amountCents={amountCents}
+        onSuccess={onSuccess}
+        onError={onError}
+      />
+    </Elements>
   )
 }

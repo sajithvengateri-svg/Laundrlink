@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { CheckCircle, Circle, Loader2 } from 'lucide-react'
-import { formatRelative } from '@/lib/utils'
+import { formatTime } from '@/lib/utils'
 import type { OrderWithDetails } from '@/types/order.types'
 
 interface OrderTimelineProps {
@@ -28,6 +28,13 @@ function getStepIndex(status: string | null): number {
 export function OrderTimeline({ order }: OrderTimelineProps) {
   const currentIdx = getStepIndex(order.status)
   const isCancelled = order.status === 'cancelled'
+
+  console.log('[OrderTimeline] render:', {
+    orderId: order.id,
+    status: order.status,
+    currentIdx,
+    handoffs: order.handoffs?.map((h) => h.step) ?? [],
+  })
 
   return (
     <div className="space-y-0 py-1">
@@ -88,7 +95,7 @@ export function OrderTimeline({ order }: OrderTimelineProps) {
               {handoff && (
                 <div className="mt-1 space-y-1.5">
                   <p className="text-xs text-muted-foreground">
-                    {handoff.created_at ? formatRelative(handoff.created_at) : ''}
+                    {handoff.created_at ? formatTime(handoff.created_at) : ''}
                   </p>
 
                   {/* Handoff photos */}

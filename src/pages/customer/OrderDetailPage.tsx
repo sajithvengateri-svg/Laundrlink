@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Package, MapPin, Calendar, RefreshCw, Star, FileText, Download, Loader2 } from 'lucide-react'
+import { ArrowLeft, Package, MapPin, Calendar, RefreshCw, Star, FileText, Download, Loader2, ShieldCheck } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -16,6 +16,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { formatCents, formatDate } from '@/lib/utils'
 import type { RateEntity } from '@/types/rating.types'
 import { useNdisInvoice, useTriggerNdisInvoice } from '@/hooks/usePayout'
+import { supabase } from '@/lib/supabase'
 
 const TRACKABLE_STATUSES = new Set(['picked_up_by_driver', 'out_for_delivery'])
 
@@ -32,6 +33,34 @@ export function OrderDetailPage() {
 
   // Subscribe to realtime updates — invalidates query on any change
   useOrderRealtime(id ?? null)
+
+  // Task B1 — fetch assigned bag code
+  const { data: bagCode } = useQuery({
+    queryKey: ['bag', id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('bags')
+        .select('qr_code')
+        .eq('current_order_id', id!)
+        .limit(1)
+      return data?.[0]?.qr_code as string | undefined
+    },
+    enabled: !!id,
+  })
+
+  // Task A4 — derive which OTP to display
+  const pickupOtpStatuses = new Set(['pickup_scheduled', 'picked_up_by_driver'])
+  const deliveryOtpStatuses = new Set(['out_for_delivery'])
+  const activeOtp =
+    pickupOtpStatuses.has(order?.status ?? '')
+      ? order?.pickup_otp
+      : deliveryOtpStatuses.has(order?.status ?? '')
+        ? order?.delivery_otp
+        : null
+  const otpLabel =
+    pickupOtpStatuses.has(order?.status ?? '')
+      ? 'Pickup OTP'
+      : 'Delivery OTP'
 
   const { data: alreadyRated, refetch: refetchRated } = useQuery({
     queryKey: ['hasRated', id, user?.id],
@@ -96,6 +125,32 @@ export function OrderDetailPage() {
           <RefreshCw className="h-4 w-4" />
         </Button>
       </div>
+
+      {/* Assigned bag code (Task B1) */}
+      {bagCode && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="py-3 px-4 flex items-center gap-2">
+            <Package className="h-4 w-4 text-blue-600 shrink-0" />
+            <p className="text-sm font-medium text-blue-800">
+              Your Bag: <span className="font-semibold">{bagCode}</span>
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* OTP code card (Task A4) */}
+      {activeOtp && (
+        <Card className="border-blue-300 bg-blue-600 text-white">
+          <CardContent className="py-5 px-4 flex flex-col items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              <ShieldCheck className="h-4 w-4" />
+              <p className="text-xs font-medium uppercase tracking-wide">{otpLabel}</p>
+            </div>
+            <p className="text-4xl font-bold tracking-[0.3em] font-mono">{activeOtp}</p>
+            <p className="text-xs text-blue-100">Show this code to your driver</p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Live tracking map — only when driver is en route */}
       {showMap && <TrackingMap order={order} className="h-48" />}

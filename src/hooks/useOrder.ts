@@ -20,7 +20,7 @@ export function useOrder(orderId: string) {
     queryKey: ['order', orderId],
     queryFn: () => getOrderById(orderId),
     enabled: !!orderId,
-    staleTime: 10_000,
+    staleTime: 0, // always refetch — order status changes frequently during field testing
   })
 }
 

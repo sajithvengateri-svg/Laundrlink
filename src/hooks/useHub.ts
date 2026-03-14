@@ -11,7 +11,7 @@ export function useHub() {
   return useQuery({
     queryKey: ['hub', ownerId],
     queryFn: () => getHubByOwner(ownerId),
-    enabled: !!ownerId,
+    enabled: !!ownerId && profile?.role === 'hub',
     staleTime: 5 * 60 * 1000,
   })
 }

@@ -12,11 +12,11 @@ import {
 import type { ProUpdate } from '@/types/pro.types'
 
 export function useProProfile() {
-  const { user } = useAuthStore()
+  const { user, profile } = useAuthStore()
   return useQuery({
     queryKey: ['pro', 'profile', user?.id],
     queryFn: () => getProProfile(user!.id),
-    enabled: !!user?.id,
+    enabled: !!user?.id && profile?.role === 'pro',
   })
 }
 
@@ -51,30 +51,30 @@ export function useProAvailability() {
 }
 
 export function useProActiveJobs() {
-  const { user } = useAuthStore()
+  const { user, profile } = useAuthStore()
   return useQuery({
     queryKey: ['pro', 'jobs', 'active', user?.id],
     queryFn: () => getProActiveJobs(user!.id),
-    enabled: !!user?.id,
+    enabled: !!user?.id && profile?.role === 'pro',
     refetchInterval: 30_000,
   })
 }
 
 export function useProCompletedJobs(since?: string) {
-  const { user } = useAuthStore()
+  const { user, profile } = useAuthStore()
   return useQuery({
     queryKey: ['pro', 'jobs', 'completed', user?.id, since],
     queryFn: () => getProCompletedJobs(user!.id, since),
-    enabled: !!user?.id,
+    enabled: !!user?.id && profile?.role === 'pro',
   })
 }
 
 export function useProMetrics() {
-  const { user } = useAuthStore()
+  const { user, profile } = useAuthStore()
   return useQuery({
     queryKey: ['pro', 'metrics', user?.id],
     queryFn: () => getProMetrics(user!.id),
-    enabled: !!user?.id,
+    enabled: !!user?.id && profile?.role === 'pro',
     staleTime: 60_000,
   })
 }

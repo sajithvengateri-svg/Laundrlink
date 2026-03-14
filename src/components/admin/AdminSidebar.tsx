@@ -7,6 +7,7 @@ import {
   Settings,
   BarChart3,
   Bell,
+  QrCode,
 } from 'lucide-react'
 
 const NAV_ITEMS = [
@@ -17,6 +18,7 @@ const NAV_ITEMS = [
   { to: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
   { to: '/admin/notifications', label: 'Notifications', icon: Bell },
   { to: '/admin/settings', label: 'Settings', icon: Settings },
+  { to: '/admin/qr-codes', label: 'QR Codes', icon: QrCode },
 ]
 
 export function AdminSidebar() {

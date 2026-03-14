@@ -13,6 +13,12 @@ interface FieldSpec {
   unit: 'cents' | 'percent' | 'points'
 }
 
+const VERIFICATION_OPTIONS = [
+  { key: 'qr', label: 'QR Code Scanning', hint: 'Scan QR code on bag tag' },
+  { key: 'otp', label: 'OTP Verification', hint: '4-digit code shared by customer' },
+  { key: 'bag', label: 'Manual Bag Code', hint: 'Type bag code manually (e.g. LL-BAG-001)' },
+] as const
+
 const PRICING_FIELDS: FieldSpec[] = [
   { key: 'individual_bag_cents', label: 'Individual Bag Price', hint: 'Base price per bag', unit: 'cents' },
   { key: 'family_bag_cents', label: 'Family Bag Price', hint: 'Discounted family bag price', unit: 'cents' },
@@ -42,6 +48,7 @@ export function AdminSettingsPage() {
 
   const [draft, setDraft] = useState<Record<string, string>>({})
   const [saved, setSaved] = useState(false)
+  const [verificationMethods, setVerificationMethods] = useState<string[]>(['qr', 'otp', 'bag'])
 
   useEffect(() => {
     if (!config) return
@@ -55,7 +62,23 @@ export function AdminSettingsPage() {
       }
     })
     setDraft(initial)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const methods = (config as any)?.default_verification_methods as string[] | null
+    if (methods && methods.length > 0) {
+      setVerificationMethods(methods)
+    }
   }, [config])
+
+  const toggleVerification = (key: string) => {
+    setVerificationMethods((prev) => {
+      if (prev.includes(key)) {
+        // Don't allow removing the last method
+        if (prev.length <= 1) return prev
+        return prev.filter((m) => m !== key)
+      }
+      return [...prev, key]
+    })
+  }
 
   async function handleSave() {
     if (!config) return
@@ -68,6 +91,8 @@ export function AdminSettingsPage() {
         updates[key] = isNaN(n) ? null : n
       }
     })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(updates as any).default_verification_methods = verificationMethods
     await update.mutateAsync({ id: config.id, updates })
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
@@ -133,6 +158,43 @@ export function AdminSettingsPage() {
                 <p className="text-xs text-gray-400 mt-0.5">{hint}</p>
               </div>
             ))
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Verification Methods */}
+      <Card className="border-0 shadow-sm mt-6">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-semibold text-gray-700">Verification Methods</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {isLoading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-10 w-full rounded-lg" />
+            ))
+          ) : (
+            <>
+              <p className="text-xs text-gray-500 mb-2">
+                At least one method must remain enabled. These are platform-wide defaults.
+              </p>
+              {VERIFICATION_OPTIONS.map(({ key, label, hint }) => (
+                <label
+                  key={key}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100 cursor-pointer"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">{label}</p>
+                    <p className="text-xs text-gray-400">{hint}</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={verificationMethods.includes(key)}
+                    onChange={() => toggleVerification(key)}
+                    className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                </label>
+              ))}
+            </>
           )}
         </CardContent>
       </Card>
